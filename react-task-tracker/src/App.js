@@ -1,29 +1,24 @@
 import './App.css';
 import Header from "./components/Header"
 import Tasks from './components/Tasks';
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import AddTask from './components/AddTask';
 
 const App = () => {
 
-  const [tasks, setTasks] = useState([    {
-    "id": 1,
-    "text": "Doctors Appointment",
-    "day": "Feb 5th at 2:30pm",
-    "reminder": true
-  },
-  {
-    "id": 2,
-    "text": "Meeting at School",
-    "day": "Feb 6th at 1:30pm",
-    "reminder": true
-  },
-  {
-      "id": 3,
-      "text": "Food Shopping",
-      "day": "Feb 5th at 2:30pm",
-      "reminder": false
-  }
-])
+  const [showAddTask, setShowAddTask] = useState(false)
+  const [tasks, setTasks] = useState([])
+  
+  //get data from backend
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const resp = await fetch('http://localhost:5000/tasks')
+      const data = await resp.json()
+  
+      setTasks(data)
+    }
+    fetchTasks()
+  }, [])
 
   //delete task functionality
   const deleteTask = (id) => {
@@ -38,9 +33,31 @@ const App = () => {
     ))
   }
  
+  const addTask = (task) => {
+    const id = Math.floor(Math.random() * 10000) + 1
+    
+    const newTask = {id, ...task}
+
+    setTasks(tasks.concat(newTask))
+    /**
+     * Could also do:
+     * setTasks([...tasks, newTask])
+     */
+  }
+
   return(
     <div className='container'>
-      <Header ></Header>
+      {
+        showAddTask ?
+        <Header onAdd={() => setShowAddTask(!showAddTask)} shownColor='red' shownText='Close'></Header>
+        : <Header onAdd={() => setShowAddTask(!showAddTask)} shownColor='green' shownText='Open'></Header>
+      }
+
+      {
+        showAddTask &&
+        <AddTask onAdd={addTask}></AddTask>
+      }
+
       {
         tasks.length > 0 ?
         <Tasks tasks ={tasks} onDelete={deleteTask} onToggle={toggleReminder}></Tasks>
