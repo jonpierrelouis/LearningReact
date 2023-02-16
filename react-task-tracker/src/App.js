@@ -9,7 +9,7 @@ const App = () => {
   const [showAddTask, setShowAddTask] = useState(false)
   const [tasks, setTasks] = useState([])
   
-  //get data from backend
+  //get data from backend on initial load
   useEffect(() => {
     const fetchTasks = async () => {
       const resp = await fetch('http://localhost:5000/tasks')
@@ -20,29 +20,68 @@ const App = () => {
     fetchTasks()
   }, [])
 
+  //get a single task
+  const fetchTask = async (id) => {
+    const resp = await fetch(`http://localhost:5000/tasks/${id}`)
+    const data = await resp.json()
+
+    return data
+  }
+
   //delete task functionality
-  const deleteTask = (id) => {
+  const deleteTask = async (id) => {
+    await fetch(`http://localhost:5000/tasks/${id}`, {
+      method: 'DELETE'
+    })
+
     setTasks(tasks.filter( (task) => task.id !== id ))
   }
 
-  const toggleReminder = (id) => {
+  const toggleReminder = async (id) => {
+
+    const taskToToggle = await fetchTask(id)
+    const updatedTask = {...taskToToggle, reminder: !taskToToggle.reminder}
+
+    const resp =await fetch(`http://localhost:5000/tasks/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify(updatedTask)
+    })
+
+    const data = await resp.json()
+    
     setTasks(tasks.map(
       (task) => task.id === id ? 
-      {...task, reminder: !task.reminder}
+      {...task, reminder: data.reminder /*!task.reminder*/}
       : task
     ))
   }
  
-  const addTask = (task) => {
-    const id = Math.floor(Math.random() * 10000) + 1
-    
-    const newTask = {id, ...task}
+  const addTask = async (task) => {
 
-    setTasks(tasks.concat(newTask))
-    /**
-     * Could also do:
-     * setTasks([...tasks, newTask])
-     */
+    const resp = await fetch(`http://localhost:5000/tasks/`, {
+      method: 'POST',
+      headers: {
+        'Content-type': "application/json"
+      },
+      body: JSON.stringify(task)
+    })
+
+    const data = await resp.json()
+    setTasks([...tasks, data])
+
+    //needed previously for hardcoded tasks (no backend), needed an id for keys
+    // const id = Math.floor(Math.random() * 10000) + 1
+    // const newTask = {id, ...task}
+    //setTasks(tasks.concat(newTask))  
+          /**
+           * Could also do:
+           * setTasks([...tasks, newTask])
+           */
+    
+
   }
 
   return(
